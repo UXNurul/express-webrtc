@@ -1,46 +1,35 @@
-const express = require('express');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+app.use(cors());
 
-io.on('connection', (socket) => {
-    console.log('New client connected');
-
-    socket.on('join-room', (roomId) => {
-        socket.join(roomId);
-        console.log(`Client with ID ${socket.id} joined room: ${roomId}`);
-
-        socket.broadcast.to(roomId).emit('user-connected', socket.id);
-
-        socket.on('disconnect', () => {
-            console.log(`Client with ID ${socket.id} disconnected`);
-            socket.broadcast.to(roomId).emit('user-disconnected', socket.id);
-        });
-    });
-
-    socket.on('offer', (offer, roomId) => {
-        socket.to(roomId).emit('offer', offer);
-    });
-
-    socket.on('answer', (answer, roomId) => {
-        socket.to(roomId).emit('answer', answer);
-    });
-
-    socket.on('ice-candidate', (candidate, roomId) => {
-        socket.to(roomId).emit('ice-candidate', candidate);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
-    });
-});
-
-app.get('/', (req, res) => {
-    res.send('WebRTC server is running');
+const server = require("http").createServer(app);
+const io = require("socket.io")(server, {
+  cors: { origin: "http://127.0.0.1:5173" }, // Ensure correct CORS origin
 });
 
 const PORT = process.env.PORT || 3000;
 
-http.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+io.on("connection", (socket) => {
+  console.log("Connected");
+
+  socket.on("message", (message) => {
+    socket.broadcast.emit("message", message);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected");
+  });
+});
+
+function error(err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send("Internal Server Error");
+}
+
+app.use(error);
+
+server.listen(PORT, () => {
+  console.log(`Listening on Port ${PORT}`);
 });
