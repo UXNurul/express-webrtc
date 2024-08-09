@@ -6,7 +6,9 @@ app.use(cors());
 
 const server = require("http").createServer(app);
 const io = require("socket.io")(server, {
-  cors: { origin: "http://127.0.0.1:5173" }, // Ensure correct CORS origin
+  cors: {
+    origin: "*", // Adjust this to your client URL in production
+  },
 });
 
 const PORT = process.env.PORT || 3000;
